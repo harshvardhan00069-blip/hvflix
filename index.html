@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HVFLIX - Watch TV Shows Online, Watch Movies Online</title>
+    <style>
+        :root {
+            --primary: #e50914; /* Netflix Red */
+            --bg: #141414;
+            --text: #ffffff;
+            --card-width: 250px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- Header --- */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 4%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 10%, transparent);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        header.scrolled {
+            background-color: var(--bg);
+        }
+
+        .logo {
+            color: var(--primary);
+            font-size: 2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-decoration: none;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            background-color: #333;
+            cursor: pointer;
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            height: 85vh; /* 85% of viewport height */
+            background-image: linear-gradient(rgba(0,0,0,0.2), var(--bg)), url('https://image.tmdb.org/t/p/original/mDeUmPeXSZV5pX4Jj5i9O3c6W9q.jpg'); /* Default bg */
+            background-size: cover;
+            background-position: center top;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-left: 4%;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 600px;
+            margin-top: 100px;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .hero-desc {
+            font-size: 1.2rem;
+            line-height: 1.4;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .hero-btns button {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-play {
+            background-color: white;
+            color: black;
+        }
+        .btn-play:hover { background-color: rgba(255,255,255,0.75); }
+
+        .btn-info {
+            background-color: rgba(109, 109, 110, 0.7);
+            color: white;
+        }
+        .btn-info:hover { background-color: rgba(109, 109, 110, 0.4); }
+
+        /* --- Rows --- */
+        .row {
+            padding: 20px 0 20px 4%;
+        }
+
+        .row h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            transition: color 0.3s;
+        }
+
+        .row h2:hover { color: #ccc; }
+
+        .row-posters {
+            display: flex;
+            overflow-x: scroll;
+            overflow-y: hidden;
+            padding: 20px 0;
+            scroll-behavior: smooth;
+        }
+
+        /* Hide scrollbar but keep functionality */
+        .row-posters::-webkit-scrollbar {
+            display: none;
+        }
+
+        .poster {
+            width: var(--card-width);
+            height: 140px; /* Landscape aspect ratio default */
+            object-fit: cover;
+            margin-right: 10px;
+            border-radius: 4px;
+            transition: transform 0.4s;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* Top 10 Row is usually Portrait */
+        .poster.portrait {
+            height: 350px;
+            width: auto;
+        }
+
+        .poster:hover {
+            transform: scale(1.08);
+            z-index: 10;
+        }
+
+        /* --- Modal --- */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #181818;
+            padding: 40px;
+            border-radius: 8px;
+            max-width: 600px;
+            text-align: center;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px; right: 20px;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #888;
+        }
+        .close-btn:hover { color: white; }
+
+        .video-placeholder {
+            width: 100%;
+            height: 300px;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2.5rem; }
+            .hero-desc { font-size: 1rem; }
+            :root { --card-width: 160px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header id="navbar">
+        <a href="#" class="logo">HVFLIX</a>
+        <div class="nav-right">
+            <span>Search</span>
+            <span>Kids</span>
+            <div class="avatar" onclick="alert('Profile Settings')"></div>
+        </div>
+    </header>
+
+    <div class="hero" id="hero">
+        <div class="hero-content">
+            <h1 class="hero-title" id="heroTitle">Stranger Things</h1>
+            <p class="hero-desc" id="heroDesc">When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces, and one strange little girl.</p>
+            <div class="hero-btns">
+                <button class="btn-play" onclick="playVideo('Stranger Things')">▶ Play</button>
+                <button class="btn-info" onclick="openModal('Stranger Things')">ℹ More Info</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rows-container">
+        </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">×</span>
+            <div class="video-placeholder" id="modalVideoArea">
+                Loading Trailer...
+            </div>
+            <h2 id="modalTitle">Title</h2>
+            <p id="modalDesc" style="margin-top: 10px; color: #aaa;">Description text goes here.</p>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Data Mockup ---
+        // In a real app, this would come from an API (like TMDB)
+        const categories = [
+            {
+                title: "Trending Now",
+                isPortrait: false,
+                items: [
+                    { title: "Inception", img: "https://image.tmdb.org/t/p/w500/8ZKKq70Jo5WH0NH83zJ2I2d4lRA.jpg" },
+                    { title: "The Dark Knight", img: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg" },
+                    { title: "Interstellar", img: "https://image.tmdb.org/t/p/w500/gEU2QniL6C8z1dY4cvBTsD0s6ak.jpg" },
+                    { title: "Parasite", img: "https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg" },
+                    { title: "Avengers", img: "https://image.tmdb.org/t/p/w500/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg" },
+                    { title: "Matrix", img: "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg" },
+                    { title: "Joker", img: "https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg" }
+                ]
+            },
+            {
+                title: "HVFLIX Originals",
+                isPortrait: true, // Tall posters for Originals
+                items: [
+                    { title: "Stranger Things", img: "https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg" },
+                    { title: "The Crown", img: "https://image.tmdb.org/t/p/w500/scZlQQYnDVlnpxFTuEbNwKDzh85.jpg" },
+                    { title: "Money Heist", img: "https://image.tmdb.org/t/p/w500/reEMJA1uzscCbkpeRJeTT2bjqUp.jpg" },
+                    { title: "The Witcher", img: "https://image.tmdb.org/t/p/w500/7vjaCd43Cn60A01964tNuaG8S00.jpg" },
+                    { title: "Squid Game", img: "https://image.tmdb.org/t/p/w500/dDlEmu3EZ0pggq782R6mf5qNGLn.jpg" }
+                ]
+            },
+            {
+                title: "Action Thrillers",
+                isPortrait: false,
+                items: [
+                    { title: "Gladiator", img: "https://image.tmdb.org/t/p/w500/ty8TGRuvJLPUmAR1H1nRIsgwvim.jpg" },
+                    { title: "John Wick", img: "https://image.tmdb.org/t/p/w500/nCzzQKGijV712f2UpWD1u45L06R.jpg" },
+                    { title: "Mad Max", img: "https://image.tmdb.org/t/p/w500/hA2ple9q4qnwxp3hKVNhroipsir.jpg" },
+                    { title: "Top Gun", img: "https://image.tmdb.org/t/p/w500/62HCnUTziyWcpDaBO2i1DX17ljH.jpg" }
+                ]
+            }
+        ];
+
+        // --- 2. Render Rows ---
+        const container = document.getElementById('rows-container');
+
+        categories.forEach(cat => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'row';
+
+            const title = document.createElement('h2');
+            title.innerText = cat.title;
+
+            const postersDiv = document.createElement('div');
+            postersDiv.className = 'row-posters';
+
+            cat.items.forEach(movie => {
+                const img = document.createElement('img');
+                img.className = `poster ${cat.isPortrait ? 'portrait' : ''}`;
+                img.src = movie.img;
+                img.alt = movie.title;
+                img.onclick = () => openModal(movie.title); // Click to open details
+                postersDiv.appendChild(img);
+            });
+
+            rowDiv.appendChild(title);
+            rowDiv.appendChild(postersDiv);
+            container.appendChild(rowDiv);
+        });
+
+        // --- 3. Navbar Scroll Effect ---
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 100) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // --- 4. Modal Logic ---
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDesc = document.getElementById('modalDesc');
+
+        function openModal(title) {
+            modal.style.display = 'flex';
+            modalTitle.innerText = title;
+            modalDesc.innerText = `Watch ${title} now on HVFLIX. Experience high-quality streaming anywhere, anytime.`;
+            document.getElementById('modalVideoArea').innerHTML = `Playing trailer for: <strong>${title}</strong>`;
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        // Close modal if clicking outside content
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        function playVideo(title) {
+            alert(`Now Playing: ${title}`);
+        }
+    </script>
+</body>
+</html>
